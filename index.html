@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL GET Parameter Editor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        input[type="text"] {
+            margin: 5px 0;
+            width: calc(100% - 60px);
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+        .param-edit {
+            margin-top: 20px;
+        }
+
+        .param-group {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .param-group button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        #updatedUrl {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            word-break: break-all;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+</head>
+
+<body>
+
+    <h2>URL GET Parameter Editor</h2>
+
+    <form id="urlForm">
+        <label for="url">Original URL:</label>
+        <input type="text" id="url" placeholder="Enter URL with GET parameters" required>
+    </form>
+
+    <h3>Updated URL:</h3>
+    <p id="updatedUrl"></p>
+
+    <div id="paramEditor" class="param-edit"></div>
+
+    <script>
+        const urlInput = document.getElementById('url');
+        const paramEditor = document.getElementById('paramEditor');
+        const updatedUrlDisplay = document.getElementById('updatedUrl');
+        let params;
+
+        // Parse URL and display parameters in input fields
+        urlInput.addEventListener('input', () => {
+            const url = new URL(urlInput.value, window.location.origin);
+            params = new URLSearchParams(url.search);
+            paramEditor.innerHTML = '';  // Clear previous inputs
+
+            // Dynamically generate input fields and delete buttons for each GET parameter
+            params.forEach((value, key) => {
+                const paramGroup = document.createElement('div');
+                paramGroup.classList.add('param-group');
+                paramGroup.innerHTML = `
+                <label>${key}:</label>
+                <input type="text" value="${value}" data-key="${key}">
+                <button type="button" data-key="${key}">Delete</button>
+            `;
+                paramEditor.appendChild(paramGroup);
+            });
+
+            updateUrl(); // Generate updated URL on initial load
+
+            // Add event listeners to dynamically update URL on input change
+            paramEditor.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', updateUrl);
+            });
+
+            // Add event listeners to delete buttons
+            paramEditor.querySelectorAll('button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const keyToDelete = e.target.getAttribute('data-key');
+                    params.delete(keyToDelete); // Delete the param from URLSearchParams
+                    updateUrl(); // Update URL after deletion
+                    e.target.parentElement.remove(); // Remove the deleted param input field
+                });
+            });
+        });
+
+        // Function to update the URL display
+        function updateUrl() {
+            const url = new URL(urlInput.value, window.location.origin);
+
+            // Collect new parameter values from input fields
+            paramEditor.querySelectorAll('input').forEach(input => {
+                const key = input.getAttribute('data-key');
+                const value = input.value;
+
+                // Update the params to keep keys even if empty
+                params.set(key, value);
+            });
+
+            // Update the URL search string with all params, including empty ones
+            url.search = params.toString();
+            updatedUrlDisplay.textContent = url.toString();
+        }
+    </script>
+
+</body>
+
+</html>
